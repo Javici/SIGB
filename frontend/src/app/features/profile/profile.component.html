@@ -1,0 +1,87 @@
+<h2 class="mb-4"><i class="bi bi-person-circle me-2"></i>Mi Perfil</h2>
+
+@if (error()) {
+  <div class="alert alert-danger alert-dismissible">
+    {{ error() }}
+    <button class="btn-close" (click)="error.set(null)"></button>
+  </div>
+}
+@if (success()) {
+  <div class="alert alert-success alert-dismissible">
+    {{ success() }}
+    <button class="btn-close" (click)="success.set(null)"></button>
+  </div>
+}
+
+<div class="row g-4">
+
+  <!-- Información de la cuenta -->
+  <div class="col-md-4">
+    <div class="card shadow-sm border-0 h-100">
+      <div class="card-body">
+        <h5 class="card-title"><i class="bi bi-info-circle me-2"></i>Mi cuenta</h5>
+        <p class="mb-1"><strong>Usuario:</strong> {{ auth.username() }}</p>
+        <p class="mb-1"><strong>Rol:</strong>
+          <span class="badge bg-primary">{{ auth.currentRole() }}</span>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mis Reservas -->
+  <div class="col-md-8">
+    <div class="card shadow-sm border-0">
+      <div class="card-body">
+        <h5 class="card-title">
+          <i class="bi bi-bookmark-check me-2"></i>Mis Reservas
+        </h5>
+
+        @if (reservations().length === 0) {
+          <p class="text-muted">No tienes reservas activas.</p>
+        } @else {
+          <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>Libro</th>
+                  <th>Fecha</th>
+                  <th>Posición</th>
+                  <th>Estado</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (r of reservations(); track r.id) {
+                  <tr>
+                    <td>{{ r.bookTitle }}</td>
+                    <td>{{ r.reservationDate | slice:0:10 }}</td>
+                    <td>
+                      <span class="badge bg-info text-dark">
+                        #{{ r.queuePosition }}
+                      </span>
+                    </td>
+                    <td>
+                      <span class="badge"
+                            [class.bg-warning]="r.status === 'NOTIFIED'"
+                            [class.bg-secondary]="r.status === 'PENDING'">
+                        {{ r.status }}
+                      </span>
+                    </td>
+                    <td>
+                      @if (r.status === 'PENDING') {
+                        <button class="btn btn-sm btn-outline-danger"
+                                (click)="cancelReservation(r.id)">
+                          <i class="bi bi-x"></i>
+                        </button>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</div>

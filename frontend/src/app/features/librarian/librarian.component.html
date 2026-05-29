@@ -1,0 +1,154 @@
+<h2 class="mb-4"><i class="bi bi-clipboard-check me-2"></i>Panel del Bibliotecario</h2>
+
+@if (error()) {
+  <div class="alert alert-danger alert-dismissible">
+    {{ error() }}
+    <button class="btn-close" (click)="error.set(null)"></button>
+  </div>
+}
+@if (success()) {
+  <div class="alert alert-success alert-dismissible">
+    {{ success() }}
+    <button class="btn-close" (click)="success.set(null)"></button>
+  </div>
+}
+
+<div class="row g-4">
+
+  <!-- ── Nuevo Préstamo ─────────────────────────────────────── -->
+  <div class="col-md-4">
+    <div class="card shadow-sm border-0 h-100">
+      <div class="card-body">
+        <h5 class="card-title"><i class="bi bi-plus-circle me-2"></i>Nuevo Préstamo</h5>
+        <form [formGroup]="loanForm" (ngSubmit)="createLoan()">
+
+          <div class="mb-2">
+            <label class="form-label small">ID de Usuario</label>
+            <input type="number" class="form-control form-control-sm"
+                   formControlName="userId" placeholder="Ej: 1">
+          </div>
+          <div class="mb-3">
+            <label class="form-label small">ID de Libro</label>
+            <input type="number" class="form-control form-control-sm"
+                   formControlName="bookId" placeholder="Ej: 12">
+          </div>
+
+          <button class="btn btn-primary btn-sm w-100"
+                  [disabled]="loanForm.invalid">
+            <i class="bi bi-check-lg me-1"></i>Crear Préstamo
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Añadir / Editar Libro ──────────────────────────────── -->
+  <div class="col-md-8">
+    <div class="card shadow-sm border-0">
+      <div class="card-body">
+        <h5 class="card-title">
+          <i class="bi bi-book me-2"></i>
+          {{ editingBook() ? 'Editar Libro' : 'Añadir Libro al Catálogo' }}
+        </h5>
+        <form [formGroup]="bookForm" (ngSubmit)="saveBook()">
+          <div class="row g-2">
+            <div class="col-md-6">
+              <input class="form-control form-control-sm" formControlName="title"
+                     placeholder="Título *">
+            </div>
+            <div class="col-md-6">
+              <input class="form-control form-control-sm" formControlName="author"
+                     placeholder="Autor *">
+            </div>
+            <div class="col-md-4">
+              <input class="form-control form-control-sm" formControlName="isbn"
+                     placeholder="ISBN">
+            </div>
+            <div class="col-md-4">
+              <input class="form-control form-control-sm" formControlName="category"
+                     placeholder="Categoría">
+            </div>
+            <div class="col-md-2">
+              <input type="number" class="form-control form-control-sm"
+                     formControlName="totalCopies" placeholder="Ejemplares">
+            </div>
+            <div class="col-md-2">
+              <input type="number" class="form-control form-control-sm"
+                     formControlName="publishedYear" placeholder="Año">
+            </div>
+            <div class="col-12">
+              <textarea class="form-control form-control-sm" rows="2"
+                        formControlName="description"
+                        placeholder="Descripción (opcional)"></textarea>
+            </div>
+          </div>
+          <button class="btn btn-success btn-sm mt-2" [disabled]="bookForm.invalid">
+            <i class="bi bi-floppy me-1"></i>
+            {{ editingBook() ? 'Guardar Cambios' : 'Añadir Libro' }}
+          </button>
+          @if (editingBook()) {
+            <button type="button" class="btn btn-outline-secondary btn-sm mt-2 ms-2"
+                    (click)="editingBook.set(null); bookForm.reset()">
+              Cancelar
+            </button>
+          }
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Préstamos Activos ──────────────────────────────────── -->
+  <div class="col-12">
+    <div class="card shadow-sm border-0">
+      <div class="card-body">
+        <h5 class="card-title">
+          <i class="bi bi-journal-bookmark me-2"></i>
+          Préstamos Activos ({{ activeLoans().length }})
+        </h5>
+
+        @if (loading()) {
+          <div class="text-center py-3"><div class="spinner-border text-primary"></div></div>
+        } @else if (activeLoans().length === 0) {
+          <p class="text-muted">No hay préstamos activos en este momento.</p>
+        } @else {
+          <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>#</th><th>Usuario</th><th>Libro</th>
+                  <th>Préstamo</th><th>Vence</th><th>Estado</th><th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (loan of activeLoans(); track loan.id) {
+                  <tr [class.overdue-row]="loan.overdueDays > 0">
+                    <td>{{ loan.id }}</td>
+                    <td>{{ loan.username }}</td>
+                    <td>{{ loan.bookTitle }}</td>
+                    <td>{{ loan.loanDate }}</td>
+                    <td>{{ loan.dueDate }}</td>
+                    <td>
+                      @if (loan.overdueDays > 0) {
+                        <span class="badge bg-danger">
+                          +{{ loan.overdueDays }} días ({{ loan.fine | number:'1.2-2' }}€)
+                        </span>
+                      } @else {
+                        <span class="badge bg-success">En plazo</span>
+                      }
+                    </td>
+                    <td>
+                      <button class="btn btn-sm btn-outline-primary"
+                              (click)="returnBook(loan.id)">
+                        <i class="bi bi-arrow-return-left me-1"></i>Devolver
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</div>

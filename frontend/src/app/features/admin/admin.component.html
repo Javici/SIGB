@@ -1,0 +1,82 @@
+<h2 class="mb-4"><i class="bi bi-gear me-2"></i>Panel de Administración</h2>
+
+@if (error()) {
+  <div class="alert alert-danger alert-dismissible">
+    {{ error() }}
+    <button class="btn-close" (click)="error.set(null)"></button>
+  </div>
+}
+@if (success()) {
+  <div class="alert alert-success alert-dismissible">
+    {{ success() }}
+    <button class="btn-close" (click)="success.set(null)"></button>
+  </div>
+}
+
+<div class="card shadow-sm border-0">
+  <div class="card-body">
+    <h5 class="card-title">
+      <i class="bi bi-people me-2"></i>Gestión de Usuarios ({{ users().length }})
+    </h5>
+
+    @if (loading()) {
+      <div class="text-center py-4"><div class="spinner-border text-primary"></div></div>
+    } @else {
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>ID</th>
+              <th>Usuario</th>
+              <th>Email</th>
+              <th>Rol</th>
+              <th>Estado</th>
+              <th>Sanción hasta</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (user of users(); track user.id) {
+              <tr>
+                <td class="text-muted small">{{ user.id }}</td>
+                <td><strong>{{ user.username }}</strong></td>
+                <td class="small">{{ user.email }}</td>
+                <td>
+                  <select class="form-select form-select-sm"
+                          [ngModel]="user.role"
+                          (ngModelChange)="changeRole(user.id, $event)">
+                    @for (r of roles; track r) {
+                      <option [value]="r">{{ r }}</option>
+                    }
+                  </select>
+                </td>
+                <td>
+                  <span class="badge"
+                        [class.bg-success]="user.active"
+                        [class.bg-danger]="!user.active">
+                    {{ user.active ? 'Activo' : 'Inactivo' }}
+                  </span>
+                </td>
+                <td class="small text-danger">
+                  {{ user.sanctionedUntil ?? '—' }}
+                </td>
+                <td>
+                  <button class="btn btn-sm"
+                          [class.btn-outline-danger]="user.active"
+                          [class.btn-outline-success]="!user.active"
+                          (click)="toggleActive(user)">
+                    @if (user.active) {
+                      <i class="bi bi-slash-circle me-1"></i>Deshabilitar
+                    } @else {
+                      <i class="bi bi-check-circle me-1"></i>Habilitar
+                    }
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>

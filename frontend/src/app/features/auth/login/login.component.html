@@ -1,0 +1,105 @@
+<div class="login-page">
+  <div class="login-card">
+
+    <!-- Card header -->
+    <div class="login-card-header">
+      <i class="bi bi-book-half" style="font-size:2rem;color:var(--lib-accent)"></i>
+      <p class="brand-name">SIGB Biblioteca</p>
+      <p class="brand-subtitle">Sistema de Gestión de Biblioteca</p>
+    </div>
+
+    <!-- Card body -->
+    <div class="login-card-body">
+
+      <!-- Tabs -->
+      <div class="login-tabs">
+        <button class="login-tab" [class.active]="mode() === 'login'"
+                (click)="switchMode('login')">
+          <i class="bi bi-box-arrow-in-right me-1"></i>Iniciar Sesión
+        </button>
+        <button class="login-tab" [class.active]="mode() === 'register'"
+                (click)="switchMode('register')">
+          <i class="bi bi-person-plus me-1"></i>Registrarse
+        </button>
+      </div>
+
+      <!-- Mensaje de error -->
+      @if (error()) {
+        <div class="alert alert-danger d-flex align-items-center gap-2 mb-3 py-2">
+          <i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i>
+          <span style="font-size:.875rem">{{ error() }}</span>
+          <button class="btn-close ms-auto btn-sm" (click)="error.set(null)"></button>
+        </div>
+      }
+
+      <!-- Formulario LOGIN -->
+      @if (mode() === 'login') {
+        <form [formGroup]="loginForm" (ngSubmit)="onLogin()">
+          <div class="lib-form-group">
+            <label class="lib-label" for="username">
+              <i class="bi bi-person me-1"></i>Usuario
+            </label>
+            <input id="username" class="lib-input" type="text"
+                   formControlName="username" placeholder="Tu nombre de usuario">
+          </div>
+
+          <div class="lib-form-group">
+            <label class="lib-label" for="password">
+              <i class="bi bi-lock me-1"></i>Contraseña
+            </label>
+            <input id="password" class="lib-input" type="password"
+                   formControlName="password" placeholder="Tu contraseña">
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100 mt-1"
+                  [disabled]="loginForm.invalid || loading()"
+                  style="padding:.65rem;font-weight:600">
+            @if (loading()) {
+              <span class="spinner-border spinner-border-sm me-2"></span>
+            }
+            Entrar
+          </button>
+        </form>
+      }
+
+      <!-- Formulario REGISTRO -->
+      @if (mode() === 'register') {
+        <form [formGroup]="registerForm" (ngSubmit)="onRegister()">
+          <div class="lib-form-group">
+            <label class="lib-label" for="reg-username">
+              <i class="bi bi-person me-1"></i>Usuario
+            </label>
+            <input id="reg-username" class="lib-input" type="text"
+                   formControlName="username" placeholder="Elige un nombre de usuario">
+          </div>
+
+          <div class="lib-form-group">
+            <label class="lib-label" for="reg-email">
+              <i class="bi bi-envelope me-1"></i>Correo electrónico
+            </label>
+            <input id="reg-email" class="lib-input" type="email"
+                   formControlName="email" placeholder="correo@ejemplo.com">
+          </div>
+
+          <div class="lib-form-group">
+            <label class="lib-label" for="reg-password">
+              <i class="bi bi-lock me-1"></i>Contraseña
+            </label>
+            <input id="reg-password" class="lib-input" type="password"
+                   formControlName="password" placeholder="Mínimo 6 caracteres">
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100 mt-1"
+                  [disabled]="registerForm.invalid || loading()"
+                  style="padding:.65rem;font-weight:600">
+            @if (loading()) {
+              <span class="spinner-border spinner-border-sm me-2"></span>
+            }
+            Crear cuenta
+          </button>
+        </form>
+      }
+
+    </div>
+  </div>
+</div>

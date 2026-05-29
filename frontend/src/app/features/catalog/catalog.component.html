@@ -1,0 +1,107 @@
+<!-- Hero banner -->
+<div class="catalog-hero d-flex align-items-center justify-content-between">
+  <div>
+    <h1 class="hero-title">
+      <i class="bi bi-book-half me-2" style="color:var(--lib-accent)"></i>Catálogo de Libros
+    </h1>
+    <p class="hero-subtitle">Explora nuestra colección · Reserva en línea · Gestiona tus préstamos</p>
+  </div>
+  <div class="hero-icon d-none d-md-block">
+    <i class="bi bi-journals"></i>
+  </div>
+</div>
+
+<!-- Alertas -->
+@if (error()) {
+  <div class="alert alert-danger alert-dismissible d-flex align-items-center gap-2 mb-3" role="alert">
+    <i class="bi bi-exclamation-triangle-fill"></i>
+    <span>{{ error() }}</span>
+    <button class="btn-close ms-auto" (click)="clearMessages()"></button>
+  </div>
+}
+@if (success()) {
+  <div class="alert alert-success alert-dismissible d-flex align-items-center gap-2 mb-3" role="alert">
+    <i class="bi bi-check-circle-fill"></i>
+    <span>{{ success() }}</span>
+    <button class="btn-close ms-auto" (click)="clearMessages()"></button>
+  </div>
+}
+
+<!-- Buscador avanzado -->
+<div class="search-panel mb-4">
+  <p class="panel-label"><i class="bi bi-funnel me-1"></i>Búsqueda avanzada</p>
+  <form [formGroup]="searchForm">
+    <div class="row g-2">
+      <div class="col-md-3">
+        <input class="lib-input" formControlName="title" placeholder="Título...">
+      </div>
+      <div class="col-md-3">
+        <input class="lib-input" formControlName="author" placeholder="Autor...">
+      </div>
+      <div class="col-md-2">
+        <input class="lib-input" formControlName="isbn" placeholder="ISBN...">
+      </div>
+      <div class="col-md-2">
+        <input class="lib-input" formControlName="category" placeholder="Categoría...">
+      </div>
+      <div class="col-md-2 d-flex align-items-center">
+        <label class="d-flex align-items-center gap-2" style="cursor:pointer;font-size:.875rem;color:var(--lib-text-muted)">
+          <input type="checkbox" class="form-check-input m-0" formControlName="availableOnly">
+          Solo disponibles
+        </label>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- Estado de carga -->
+@if (loading()) {
+  <div class="text-center py-5">
+    <div class="spinner-border" role="status" style="width:2.5rem;height:2.5rem"></div>
+    <p class="mt-3" style="color:var(--lib-text-muted);font-size:.875rem">Cargando colección...</p>
+  </div>
+} @else if (books().length === 0) {
+  <div class="text-center py-5" style="color:var(--lib-text-muted)">
+    <i class="bi bi-search display-4 d-block mb-3" style="opacity:.4"></i>
+    <p class="mb-0">No se encontraron libros con esos filtros.</p>
+  </div>
+} @else {
+  <!-- Grid de tarjetas -->
+  <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-3">
+    @for (book of books(); track book.id) {
+      <div class="col">
+        <div class="card h-100 book-card">
+          <div class="card-body">
+            <h6 class="card-title">{{ book.title }}</h6>
+            <p class="mb-2" style="font-size:.82rem;color:var(--lib-text-muted)">
+              <i class="bi bi-person me-1"></i>{{ book.author }}
+            </p>
+            <div class="d-flex flex-wrap gap-1">
+              @if (book.category) {
+                <span class="badge-category">{{ book.category }}</span>
+              }
+              @if (book.publishedYear) {
+                <span class="badge-year">{{ book.publishedYear }}</span>
+              }
+            </div>
+          </div>
+          <div class="card-footer d-flex justify-content-between align-items-center">
+            <span [class]="book.availableCopies > 0 ? 'badge-available' : 'badge-unavailable'">
+              @if (book.availableCopies > 0) {
+                <i class="bi bi-check-circle me-1"></i>{{ book.availableCopies }} disponibles
+              } @else {
+                <i class="bi bi-x-circle me-1"></i>No disponible
+              }
+            </span>
+
+            @if (auth.isLoggedIn() && book.availableCopies === 0) {
+              <button class="btn btn-sm btn-outline-accent" (click)="reserve(book.id!)">
+                <i class="bi bi-bookmark me-1"></i>Reservar
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+}
