@@ -3,7 +3,7 @@
 ### Java 25 (LTS) + Spring Boot 4.0.6 + Angular 19
 
 **Autor:** Javier Lujan  
-**Fecha:** Mayo 2026  
+**Fecha:** Junio 2026  
 **TFM Master Fullstack**
 
 ---
@@ -52,7 +52,7 @@ Características implementadas:
 - **Tres roles**: ADMIN, LIBRARIAN, READER. Las rutas están protegidas tanto en el backend (Spring Security) como en el frontend (Angular Guards).
 - **Catálogo** con búsqueda multifiltro en tiempo real.
 - **Préstamos físicos** con control de plazos, cálculo automático de multas y aplicación de sanciones.
-- **Cola de reservas** con notificación automática por email al primer usuario en cola cuando se registra una devolución.
+- **Cola de reservas** con notificación automática por email al primer usuario en cola cuando se registra una devolución. El bibliotecario puede aceptar o denegar reservas pendientes.
 - **Concurrencia de alto rendimiento** gracias a Virtual Threads de Java 25.
 
 ---
@@ -65,19 +65,19 @@ sigb/
 │   ├── pom.xml
 │   └── src/main/
 │       ├── java/com/library/sigb/
-│       │   ├── LibraryApplication.java     ← Punto de entrada
+│       │   ├── LibraryApplication.java          ← Punto de entrada
 │       │   ├── config/
-│       │   │   ├── SecurityConfig.java     ← Spring Security 7
-│       │   │   └── AsyncConfig.java        ← Virtual Threads para @Async
-│       │   ├── entity/                     ← Entidades JPA (tablas MySQL)
+│       │   │   ├── SecurityConfig.java          ← Spring Security 7
+│       │   │   └── AsyncConfig.java             ← Virtual Threads para @Async
+│       │   ├── entity/                          ← Entidades JPA (tablas MySQL)
 │       │   │   ├── User.java
 │       │   │   ├── Book.java
 │       │   │   ├── Loan.java
 │       │   │   ├── Reservation.java
-│       │   │   ├── Role.java               ← enum
-│       │   │   ├── LoanStatus.java         ← enum
-│       │   │   └── ReservationStatus.java  ← enum
-│       │   ├── dto/                        ← Java Records (inmutables)
+│       │   │   ├── Role.java                    ← enum
+│       │   │   ├── LoanStatus.java              ← enum
+│       │   │   └── ReservationStatus.java       ← enum
+│       │   ├── dto/                             ← Java Records (inmutables)
 │       │   │   ├── LoginRequest.java
 │       │   │   ├── LoginResponse.java
 │       │   │   ├── RegisterRequest.java
@@ -85,32 +85,33 @@ sigb/
 │       │   │   ├── UserDto.java
 │       │   │   ├── LoanDto.java
 │       │   │   └── ReservationDto.java
-│       │   ├── repository/                 ← Spring Data JPA
+│       │   ├── repository/                      ← Spring Data JPA
 │       │   │   ├── UserRepository.java
 │       │   │   ├── BookRepository.java
 │       │   │   ├── LoanRepository.java
 │       │   │   └── ReservationRepository.java
-│       │   ├── security/                   ← JWT + Scoped Values
+│       │   ├── security/                        ← JWT + Scoped Values
 │       │   │   ├── JwtUtil.java
 │       │   │   ├── JwtAuthFilter.java
 │       │   │   ├── UserDetailsServiceImpl.java
-│       │   │   └── UserContext.java        ← ScopedValue<User>
-│       │   ├── service/                    ← Lógica de negocio
+│       │   │   └── UserContext.java             ← ScopedValue<User>
+│       │   ├── service/                         ← Lógica de negocio
 │       │   │   ├── AuthService.java
 │       │   │   ├── BookService.java
 │       │   │   ├── LoanService.java
 │       │   │   ├── ReservationService.java
 │       │   │   ├── UserService.java
-│       │   │   └── NotificationService.java ← Structured Concurrency
-│       │   └── controller/                 ← REST API /api/v1/
+│       │   │   └── NotificationService.java     ← Structured Concurrency
+│       │   └── controller/                      ← REST API /api/v1/
 │       │       ├── AuthController.java
 │       │       ├── BookController.java
 │       │       ├── LoanController.java
 │       │       ├── ReservationController.java
+│       │       ├── LibrarianReservationController.java  ← Gestión reservas por bibliotecario
 │       │       └── UserController.java
 │       └── resources/
 │           ├── application.properties
-│           └── data.sql                    ← Datos iniciales
+│           └── data.sql                         ← Datos iniciales
 │
 └── frontend/                       ← Proyecto Angular 19
     ├── package.json
@@ -259,6 +260,11 @@ try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
 
 Las tres operaciones se ejecutan en **paralelo** en Virtual Threads hijos. Si cualquiera falla, `ShutdownOnFailure` cancela las demás y el error se propaga.
 
+**ReservationService – Ciclo de vida de una reserva:**
+- `createReservation()`: verifica que el usuario no esté sancionado, que el libro no esté disponible (si lo estuviera se usaría un préstamo directo), y que el usuario no tenga ya una reserva PENDING para el mismo libro. Asigna `queuePosition` correlativo.
+- `acceptReservation()`: el bibliotecario acepta la reserva notificada → crea un préstamo y marca la reserva como FULFILLED.
+- `denyReservation()`: el bibliotecario deniega la reserva → la marca como CANCELLED y notifica al siguiente en cola si procede.
+
 ### 3.6 Controladores REST
 
 Siguen el patrón REST estándar:
@@ -268,6 +274,17 @@ Siguen el patrón REST estándar:
 - `DELETE` → eliminación
 
 Todos devuelven `ResponseEntity<T>` para controlar el código HTTP de respuesta (200, 201, 204, etc.). La validación de DTOs se hace con `@Valid` y las anotaciones de Jakarta Validation (`@NotBlank`, `@Email`, etc.).
+
+**Resumen de controladores:**
+
+| Controlador | Prefijo de ruta | Rol mínimo |
+|------------|-----------------|-----------|
+| `AuthController` | `/api/v1/auth` | Público |
+| `BookController` | `/api/v1/books` | Público (GET), LIBRARIAN (escritura) |
+| `LoanController` | `/api/v1/librarian/loans` | LIBRARIAN |
+| `ReservationController` | `/api/v1/reservations` | READER |
+| `LibrarianReservationController` | `/api/v1/librarian/reservations` | LIBRARIAN |
+| `UserController` | `/api/v1/users`, `/api/v1/admin/users` | READER / ADMIN |
 
 ---
 
@@ -350,10 +367,7 @@ int sanctionDays = switch ((int) overdueDays) {
 
 Antes (Java 17) se hubiera escrito con if-else o ternario. El switch con patrones es más legible y exhaustivo (el compilador verifica que todos los casos estén cubiertos).
 
-**Nota:** Esta característica requiere `--enable-preview` en el compilador, configurado en el `pom.xml`:
-```xml
-<compilerArgs><arg>--enable-preview</arg></compilerArgs>
-```
+**Nota:** En Java 25 esta característica es estable y no requiere `--enable-preview`. El `pom.xml` únicamente especifica `<release>25</release>` en el compilador, sin flags adicionales.
 
 ### 4.5 Java Records para DTOs
 
@@ -402,9 +416,9 @@ Anotaciones `@NonNull` y `@Nullable` en toda la capa de servicio. El compilador 
 ### Jackson 3
 La serialización/deserialización de DTOs es transparente. Jackson 3 mapea automáticamente Records Java (los trata como objetos con constructores y getters). Configurado en `application.properties`:
 ```properties
-spring.jackson.serialization.write-dates-as-timestamps=false
 spring.jackson.default-property-inclusion=non_null
 ```
+Los campos `null` no se incluyen en la respuesta JSON, reduciendo el tamaño del payload.
 
 ### API Versioning nativo
 Todas las rutas tienen prefijo `/api/v1/`. Para añadir una versión 2 en el futuro bastaría con añadir `/api/v2/` con sus propios controladores sin romper la v1.
@@ -575,6 +589,19 @@ Todos usan **lazy loading** (`loadComponent: () => import(...)`) para reducir el
    → ngIf muestra alerta verde
 ```
 
+### Caso de uso: El bibliotecario acepta una reserva notificada
+
+```
+1. LIBRARIAN acepta la notificación
+   PUT /api/v1/librarian/reservations/{id}/accept
+     → LibrarianReservationController.accept(id)
+     → ReservationService.acceptReservation(id)
+       - Marca la reserva como FULFILLED
+       - Crea un Loan para el usuario de la reserva
+       - Decrementa book.availableCopies
+   ← 200 OK con el LoanDto creado
+```
+
 ---
 
 ## 8. Base de datos MySQL
@@ -628,12 +655,20 @@ CREATE TABLE reservations (
 - 4 usuarios (admin, bibliotecario, lector1, lector2) con contraseña `password123`
 - 8 libros de programación
 
+**Configuración de conexión (`application.properties`):**
+```properties
+spring.datasource.url=jdbc:mysql://localhost:3306/sigb_db?useSSL=false&serverTimezone=Europe/Madrid&allowPublicKeyRetrieval=true
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQLDialect
+```
+
 ---
 
 ## 9. Cómo ejecutar el proyecto
 
 ### Requisitos previos
-- Java 25 JDK (con preview features habilitadas)
+- Java 25 JDK
 - Maven 3.9+
 - MySQL 8.x (o 9.x) — crear base de datos `sigb_db`
 - Node.js 22+ y Angular CLI (`npm install -g @angular/cli@19`)
@@ -658,7 +693,7 @@ mvn spring-boot:run
 ```bash
 cd sigb/frontend
 npm install
-ng serve
+ng serve --proxy-config proxy.conf.json
 # → Arranca en http://localhost:4200
 # → El proxy redirige /api → localhost:8080
 ```
@@ -669,6 +704,7 @@ ng serve
 | `admin` | `password123` | ADMIN |
 | `bibliotecario` | `password123` | LIBRARIAN |
 | `lector1` | `password123` | READER |
+| `lector2` | `password123` | READER |
 
 ---
 
@@ -698,13 +734,20 @@ ng serve
 | POST | `/api/v1/librarian/loans?userId=&bookId=` | LIBRARIAN | Crear préstamo |
 | PUT | `/api/v1/librarian/loans/{id}/return` | LIBRARIAN | Registrar devolución |
 
-### Reservas
+### Reservas (lector)
 | Método | Ruta | Rol mínimo | Descripción |
 |--------|------|-----------|-------------|
 | GET | `/api/v1/reservations/my` | READER | Mis reservas |
 | GET | `/api/v1/reservations/book/{id}` | READER | Cola de un libro |
 | POST | `/api/v1/reservations?bookId=` | READER | Crear reserva |
 | DELETE | `/api/v1/reservations/{id}` | READER | Cancelar reserva propia |
+
+### Gestión de reservas (bibliotecario)
+| Método | Ruta | Rol mínimo | Descripción |
+|--------|------|-----------|-------------|
+| GET | `/api/v1/librarian/reservations/pending` | LIBRARIAN | Reservas pendientes de gestión |
+| PUT | `/api/v1/librarian/reservations/{id}/accept` | LIBRARIAN | Aceptar → crea préstamo |
+| PUT | `/api/v1/librarian/reservations/{id}/deny` | LIBRARIAN | Denegar → cancela reserva |
 
 ### Usuarios
 | Método | Ruta | Rol mínimo | Descripción |
@@ -717,4 +760,4 @@ ng serve
 
 ---
 
-*Fin de la documentación técnica.*
+*Fin de la documentación técnica — v2, Junio 2026.*

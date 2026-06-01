@@ -22,7 +22,12 @@
         <h5 class="card-title"><i class="bi bi-info-circle me-2"></i>Mi cuenta</h5>
         <p class="mb-1"><strong>Usuario:</strong> {{ auth.username() }}</p>
         <p class="mb-1"><strong>Rol:</strong>
-          <span class="badge bg-primary">{{ auth.currentRole() }}</span>
+          <span class="badge bg-primary">{{
+            auth.currentRole() === 'LIBRARIAN' ? 'Bibliotecario' :
+            auth.currentRole() === 'ADMIN'     ? 'Administrador' :
+            auth.currentRole() === 'READER'    ? 'Lector'        :
+            auth.currentRole()
+          }}</span>
         </p>
       </div>
     </div>
@@ -62,9 +67,14 @@
                     </td>
                     <td>
                       <span class="badge"
+                            [class.bg-secondary]="r.status === 'PENDING'"
                             [class.bg-warning]="r.status === 'NOTIFIED'"
-                            [class.bg-secondary]="r.status === 'PENDING'">
-                        {{ r.status }}
+                            [class.bg-success]="r.status === 'FULFILLED'"
+                            [class.bg-danger]="r.status === 'CANCELLED'">
+                        {{ r.status === 'PENDING' ? 'Pendiente' :
+                           r.status === 'NOTIFIED' ? 'Notificado' :
+                           r.status === 'FULFILLED' ? 'Aceptado' :
+                           r.status === 'CANCELLED' ? 'Cancelado' : r.status }}
                       </span>
                     </td>
                     <td>

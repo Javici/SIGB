@@ -46,7 +46,8 @@ export class CatalogComponent implements OnInit {
       distinctUntilChanged(),
       switchMap(v => {
         this.loading.set(true);
-        return this.bookService.search(v);
+        const hasFilter = v.title || v.author || v.isbn || v.category || v.availableOnly;
+        return hasFilter ? this.bookService.search(v) : this.bookService.getAll();
       })
     ).subscribe({
       next: books => { this.books.set(books); this.loading.set(false); },
@@ -64,7 +65,15 @@ export class CatalogComponent implements OnInit {
 
   reserve(bookId: number): void {
     this.loanService.createReservation(bookId).subscribe({
-      next: r => this.success.set(`Reserva creada. Tu posición en cola: ${r.queuePosition}`),
+      next: r => {
+        this.success.set(`Reserva creada. Tu posición en cola: ${r.queuePosition}`);
+        this.books.update(list =>
+          list.map(b => b.id === bookId && b.availableCopies > 0
+            ? { ...b, availableCopies: b.availableCopies - 1 }
+            : b
+          )
+        );
+      },
       error: err => this.error.set(err.error?.message ?? 'Error al crear la reserva.')
     });
   }

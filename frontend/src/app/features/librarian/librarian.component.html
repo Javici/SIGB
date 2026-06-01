@@ -15,35 +15,8 @@
 
 <div class="row g-4">
 
-  <!-- ── Nuevo Préstamo ─────────────────────────────────────── -->
-  <div class="col-md-4">
-    <div class="card shadow-sm border-0 h-100">
-      <div class="card-body">
-        <h5 class="card-title"><i class="bi bi-plus-circle me-2"></i>Nuevo Préstamo</h5>
-        <form [formGroup]="loanForm" (ngSubmit)="createLoan()">
-
-          <div class="mb-2">
-            <label class="form-label small">ID de Usuario</label>
-            <input type="number" class="form-control form-control-sm"
-                   formControlName="userId" placeholder="Ej: 1">
-          </div>
-          <div class="mb-3">
-            <label class="form-label small">ID de Libro</label>
-            <input type="number" class="form-control form-control-sm"
-                   formControlName="bookId" placeholder="Ej: 12">
-          </div>
-
-          <button class="btn btn-primary btn-sm w-100"
-                  [disabled]="loanForm.invalid">
-            <i class="bi bi-check-lg me-1"></i>Crear Préstamo
-          </button>
-        </form>
-      </div>
-    </div>
-  </div>
-
   <!-- ── Añadir / Editar Libro ──────────────────────────────── -->
-  <div class="col-md-8">
+  <div class="col-12">
     <div class="card shadow-sm border-0">
       <div class="card-body">
         <h5 class="card-title">
@@ -93,6 +66,50 @@
             </button>
           }
         </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Reservas Pendientes ───────────────────────────────── -->
+  <div class="col-12">
+    <div class="card shadow-sm border-0">
+      <div class="card-body">
+        <h5 class="card-title">
+          <i class="bi bi-bookmark-check me-2"></i>
+          Reservas Pendientes ({{ pendingReservations().length }})
+        </h5>
+
+        @if (pendingReservations().length === 0) {
+          <p class="text-muted">No hay reservas pendientes de aprobación.</p>
+        } @else {
+          <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>#</th><th>Usuario</th><th>Libro</th><th>Fecha</th><th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (r of pendingReservations(); track r.id) {
+                  <tr>
+                    <td>{{ r.id }}</td>
+                    <td>{{ r.username }}</td>
+                    <td>{{ r.bookTitle }}</td>
+                    <td>{{ r.reservationDate | slice:0:10 }}</td>
+                    <td class="d-flex gap-2">
+                      <button class="btn btn-sm btn-success" (click)="acceptReservation(r.id)">
+                        <i class="bi bi-check-lg me-1"></i>Aceptar
+                      </button>
+                      <button class="btn btn-sm btn-danger" (click)="denyReservation(r.id)">
+                        <i class="bi bi-x-lg me-1"></i>Denegar
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
       </div>
     </div>
   </div>

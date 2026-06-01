@@ -5,6 +5,7 @@ com\library\sigb\controller\BookController.class
 com\library\sigb\service\NotificationService.class
 com\library\sigb\entity\Book.class
 com\library\sigb\service\LoanService.class
+com\library\sigb\controller\LibrarianReservationController.class
 com\library\sigb\security\UserContext.class
 com\library\sigb\entity\ReservationStatus.class
 com\library\sigb\config\SecurityConfig.class

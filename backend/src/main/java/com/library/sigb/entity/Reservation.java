@@ -38,6 +38,10 @@ public class Reservation {
     @Column(nullable = false)
     private int queuePosition;
 
+    /** True si se decrementó un ejemplar disponible al crear la reserva. */
+    @Column(nullable = false)
+    private boolean heldCopy = false;
+
     // ── Constructores ─────────────────────────────────────────────────
 
     public Reservation() {}
@@ -68,4 +72,7 @@ public class Reservation {
 
     public int getQueuePosition() { return queuePosition; }
     public void setQueuePosition(int queuePosition) { this.queuePosition = queuePosition; }
+
+    public boolean isHeldCopy() { return heldCopy; }
+    public void setHeldCopy(boolean heldCopy) { this.heldCopy = heldCopy; }
 }

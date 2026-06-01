@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { LoanService } from '../../core/services/loan.service';
 import { BookService } from '../../core/services/book.service';
-import { Loan } from '../../core/models/loan.model';
+import { Loan, Reservation } from '../../core/models/loan.model';
 import { Book } from '../../core/models/book.model';
 
 @Component({
@@ -14,13 +14,13 @@ import { Book } from '../../core/models/book.model';
 })
 export class LibrarianComponent implements OnInit {
 
-  loans    = signal<Loan[]>([]);
-  books    = signal<Book[]>([]);
-  loading  = signal(true);
+  loans                = signal<Loan[]>([]);
+  books                = signal<Book[]>([]);
+  pendingReservations  = signal<Reservation[]>([]);
+  loading              = signal(true);
   success  = signal<string | null>(null);
   error    = signal<string | null>(null);
 
-  loanForm: FormGroup;
   bookForm: FormGroup;
   editingBook = signal<Book | null>(null);
 
@@ -29,11 +29,6 @@ export class LibrarianComponent implements OnInit {
     private bookService: BookService,
     private fb: FormBuilder
   ) {
-    this.loanForm = this.fb.group({
-      userId: ['', [Validators.required]],
-      bookId: ['', [Validators.required]]
-    });
-
     this.bookForm = this.fb.group({
       title:        ['', Validators.required],
       author:       ['', Validators.required],
@@ -53,7 +48,12 @@ export class LibrarianComponent implements OnInit {
   loadData(): void {
     this.loading.set(true);
     this.loanService.getAllLoans().subscribe({
-      next: loans => this.loans.set(loans)
+      next: loans => this.loans.set(loans),
+      error: err => this.error.set(err.error?.message ?? 'Error al cargar los préstamos.')
+    });
+    this.loanService.getPendingReservations().subscribe({
+      next: reservations => this.pendingReservations.set(reservations),
+      error: err => this.error.set(err.error?.message ?? 'Error al cargar reservas pendientes.')
     });
     this.bookService.getAll().subscribe({
       next: books => { this.books.set(books); this.loading.set(false); },
@@ -61,16 +61,24 @@ export class LibrarianComponent implements OnInit {
     });
   }
 
-  createLoan(): void {
-    if (this.loanForm.invalid) return;
-    const { userId, bookId } = this.loanForm.value;
-    this.loanService.createLoan(+userId, +bookId).subscribe({
+  acceptReservation(id: number): void {
+    this.loanService.acceptReservation(id).subscribe({
       next: loan => {
-        this.success.set(`Préstamo creado para usuario ${loan.username}: "${loan.bookTitle}"`);
+        this.pendingReservations.update(list => list.filter(r => r.id !== id));
         this.loans.update(list => [loan, ...list]);
-        this.loanForm.reset();
+        this.success.set(`Reserva aceptada. Préstamo creado: "${loan.bookTitle}"`);
       },
-      error: err => this.error.set(err.error?.message ?? 'Error al crear el préstamo.')
+      error: err => this.error.set(err.error?.message ?? 'Error al aceptar la reserva.')
+    });
+  }
+
+  denyReservation(id: number): void {
+    this.loanService.denyReservation(id).subscribe({
+      next: () => {
+        this.pendingReservations.update(list => list.filter(r => r.id !== id));
+        this.success.set('Reserva denegada. La copia ha sido devuelta al catálogo si procedía.');
+      },
+      error: err => this.error.set(err.error?.message ?? 'Error al denegar la reserva.')
     });
   }
 

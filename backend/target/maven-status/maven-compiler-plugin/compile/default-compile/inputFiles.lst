@@ -2,6 +2,7 @@ C:\Users\Javier\Desktop\MasterFullstack\sigb\backend\src\main\java\com\library\s
 C:\Users\Javier\Desktop\MasterFullstack\sigb\backend\src\main\java\com\library\sigb\config\SecurityConfig.java
 C:\Users\Javier\Desktop\MasterFullstack\sigb\backend\src\main\java\com\library\sigb\controller\AuthController.java
 C:\Users\Javier\Desktop\MasterFullstack\sigb\backend\src\main\java\com\library\sigb\controller\BookController.java
+C:\Users\Javier\Desktop\MasterFullstack\sigb\backend\src\main\java\com\library\sigb\controller\LibrarianReservationController.java
 C:\Users\Javier\Desktop\MasterFullstack\sigb\backend\src\main\java\com\library\sigb\controller\LoanController.java
 C:\Users\Javier\Desktop\MasterFullstack\sigb\backend\src\main\java\com\library\sigb\controller\ReservationController.java
 C:\Users\Javier\Desktop\MasterFullstack\sigb\backend\src\main\java\com\library\sigb\controller\UserController.java

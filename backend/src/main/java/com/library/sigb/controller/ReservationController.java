@@ -1,11 +1,11 @@
 package com.library.sigb.controller;
 
 import com.library.sigb.dto.ReservationDto;
-import com.library.sigb.security.UserContext;
 import com.library.sigb.service.ReservationService;
 import org.jspecify.annotations.NonNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,14 +28,12 @@ public class ReservationController {
         this.reservationService = reservationService;
     }
 
-    /** Lee las reservas propias usando el usuario del Scoped Value (JEP 487). */
     @GetMapping("/my")
-    public ResponseEntity<List<ReservationDto>> myReservations() {
-        var user = UserContext.currentOrNull();
-        if (user == null) {
+    public ResponseEntity<List<ReservationDto>> myReservations(Authentication authentication) {
+        if (authentication == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        return ResponseEntity.ok(reservationService.findByUser(user.getId()));
+        return ResponseEntity.ok(reservationService.findByUser(authentication.getName()));
     }
 
     @GetMapping("/book/{bookId}")
@@ -45,22 +43,20 @@ public class ReservationController {
 
     @PostMapping
     public ResponseEntity<ReservationDto> create(
-            @RequestParam Long bookId) {
-        var user = UserContext.currentOrNull();
-        if (user == null) {
+            @RequestParam Long bookId, Authentication authentication) {
+        if (authentication == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(reservationService.createReservation(user.getId(), bookId));
+                .body(reservationService.createReservation(authentication.getName(), bookId));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> cancel(@PathVariable Long id) {
-        var user = UserContext.currentOrNull();
-        if (user == null) {
+    public ResponseEntity<Void> cancel(@PathVariable Long id, Authentication authentication) {
+        if (authentication == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        reservationService.cancelReservation(id, user.getId());
+        reservationService.cancelReservation(id, authentication.getName());
         return ResponseEntity.noContent().build();
     }
 }

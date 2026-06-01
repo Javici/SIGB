@@ -21,13 +21,6 @@ export class LoanService {
     return this.http.get<Loan[]>(`${this.LOAN_API}/user/${userId}`);
   }
 
-  createLoan(userId: number, bookId: number): Observable<Loan> {
-    const params = new HttpParams()
-      .set('userId', userId)
-      .set('bookId', bookId);
-    return this.http.post<Loan>(this.LOAN_API, null, { params });
-  }
-
   returnBook(loanId: number): Observable<Loan> {
     return this.http.put<Loan>(`${this.LOAN_API}/${loanId}/return`, null);
   }
@@ -36,6 +29,18 @@ export class LoanService {
 
   getMyReservations(): Observable<Reservation[]> {
     return this.http.get<Reservation[]>(`${this.RESERVATION_API}/my`);
+  }
+
+  getPendingReservations(): Observable<Reservation[]> {
+    return this.http.get<Reservation[]>('/api/v1/librarian/reservations/pending');
+  }
+
+  acceptReservation(id: number): Observable<Loan> {
+    return this.http.put<Loan>(`/api/v1/librarian/reservations/${id}/accept`, null);
+  }
+
+  denyReservation(id: number): Observable<void> {
+    return this.http.put<void>(`/api/v1/librarian/reservations/${id}/deny`, null);
   }
 
   getQueueForBook(bookId: number): Observable<Reservation[]> {

@@ -19,6 +19,8 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 
     Optional<Reservation> findByUserIdAndBookIdAndStatus(Long userId, Long bookId, ReservationStatus status);
 
+    List<Reservation> findAllByStatusOrderByReservationDateAsc(ReservationStatus status);
+
     /** Primer usuario en la cola de espera para un libro. */
     @Query("""
         SELECT r FROM Reservation r
